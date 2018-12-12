@@ -1225,11 +1225,7 @@ Set_Pass(){
 
 
 check_pid(){
-	if [[ ! -e ${PID_FILE} ]]; then
-		PID=""
-	else
-		PID=$(cat ${PID_FILE})
-	fi
+PID=`ps -ef |grep "${NAME}" |grep -v "grep" | grep -v "ocservauto.sh"| grep -v "init.d" |grep -v "service" |awk '{print $2}'`
 }
 
 check_installed_status(){
