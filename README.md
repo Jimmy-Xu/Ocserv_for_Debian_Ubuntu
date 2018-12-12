@@ -27,7 +27,7 @@ You can get help
 bash ocservauto.sh h
 ```
 
-![首页图片](https://raw.githubusercontent.com/user1121114685/Ocserv_for_Debian_Ubuntu/master/20181213004409.png "封面图片简介") 
+![首页图片](https://github.com/user1121114685/Ocserv_for_Debian_Ubuntu/blob/master/20181213005045.jpg?raw=true "封面图片简介") 
 
 ============
 
