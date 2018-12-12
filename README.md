@@ -11,7 +11,7 @@ This script may help you setup your own openconnect_server in debian(>=7),ubuntu
 apt-get update
 apt-get upgrade
 apt-get install wget
-wget http://git.io/p9r8 --no-check-certificate -O ocservauto.sh
+wget wget -N --no-check-certificate "https://raw.githubusercontent.com/user1121114685/Ocserv_for_Debian_Ubuntu/master/ocservauto.sh" && chmod +x ocservauto.sh && bash ocservauto.sh
 bash ocservauto.sh
 ```
 
@@ -26,6 +26,8 @@ You can get help
 ```shell
 bash ocservauto.sh h
 ```
+
+![首页图片](https://raw.githubusercontent.com/user1121114685/Ocserv_for_Debian_Ubuntu/master/20181213004409.png "封面图片简介") 
 
 ============
 
