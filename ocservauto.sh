@@ -33,6 +33,16 @@
 #base-function                                                                                                    #
 ###################################################################################################################
 
+
+
+Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m"
+Info="${Green_font_prefix}[信息]${Font_color_suffix}"
+Error="${Red_font_prefix}[错误]${Font_color_suffix}"
+Tip="${Green_font_prefix}[注意]${Font_color_suffix}"
+
+
+sh_ver="1.0.5"
+
 #error and force-exit
 function die(){
     echo -e "\033[33mERROR: $1 \033[0m" > /dev/null 1>&2
@@ -113,7 +123,7 @@ function Default_Ask(){
     fi
     Temp_cmd="$Temp_var_name='$Temp_var'"
     eval $Temp_cmd
-    print_info "Your answer is : ${Temp_var}"
+    print_info "你输入的是: ${Temp_var}"
     echo
     print_xxxx
 }
@@ -121,7 +131,7 @@ function Default_Ask(){
 #Press any key to start 任意键开始
 function press_any_key(){
     echo
-    print_info "Press any key to start...or Press Ctrl+C to cancel"
+    print_info "按任意键开始...或按Ctrl+C取消！"
     get_char_ffff(){
         SAVEDSTTY=`stty -g`
         stty -echo
@@ -137,7 +147,7 @@ function press_any_key(){
 
 function fast_Default_Ask(){
     if [ "$fast_install" = "y" ]; then
-        print_info "In the fast mode, $3 will be loaded from $CONFIG_PATH_VARS"
+        print_info "在快速模式下, $3 将从 $CONFIG_PATH_VARS"
     else
         Default_Ask "$1" "$2" "$3"
         [ -f ${CONFIG_PATH_VARS} ] && sed -i "/^${Temp_var_name}=/d" $CONFIG_PATH_VARS
@@ -180,15 +190,15 @@ function install_OpenConnect_VPN_server(){
 #get base info and base tools
     check_Required
 #custom-configuration or not 自定义安装与否
-    fast_Default_Ask "Install ocserv with Custom Configuration?(y/n)" "n" "Custom_config_ocserv"
+    fast_Default_Ask "用自定义配置安装ocserv？【选Y使用证书模式】（y/n）" "n" "Custom_config_ocserv"
     clear && print_xxxx
     [ "$Custom_config_ocserv" = "y" ] && {
-        print_info "Install ocserv with custom configuration."
+        print_info "使用自定义配置安装ocserv。"
         print_xxxx
         get_Custom_configuration
     }
     [ "$Custom_config_ocserv" = "n" ] && {
-        print_info "Automatic installation,choose the plain login."
+        print_info "自动安装，选择密码登陆."
         print_xxxx
         self_signed_ca="y" && ca_login="n"
     }        
@@ -220,11 +230,11 @@ function install_OpenConnect_VPN_server(){
 
 #多服务器共用一份客户端证书模式，分服务器的安装主体
 function install_Oneclientcer(){
-    [ ! -f ${Script_Dir}/ca-cert.pem ] && die "${Script_Dir}/ca-cert.pem NOT Found."
+    [ ! -f ${Script_Dir}/ca-cert.pem ] && die "${Script_Dir}/ca-cert.pem 没找到."
     [ -f ${Script_Dir}/crl.pem ] && CRL_ADD="y"
     self_signed_ca="y" && ca_login="y"
     check_Required
-    Default_Ask "Input your own domain for ocserv." "$ocserv_hostname" "fqdnname"
+    Default_Ask "为ocserv输入您自己的域名." "$ocserv_hostname" "fqdnname"
     get_Custom_configuration_2
     press_any_key
     pre_install && tar_ocserv_install
@@ -242,50 +252,50 @@ function install_Oneclientcer(){
     stop_ocserv && start_ocserv
     ps cax | grep ocserv > /dev/null 2>&1
     if [ $? -eq 0 ]; then
-    print_info "Your install was successful!"
+    print_info "安装成功"
     else
-    print_warn "Ocserv start failure,ocserv is offline!"
-    print_info "You could check ${Script_Dir}/ocinstall.log"
+    print_warn "启动失败，ocserv已经离线"
+    print_info "请检查 ${Script_Dir}/ocinstall.log"
     fi
 }
 
 #环境检测以及基础工具检测安装
 function check_Required(){
 #check root
-    [ $EUID -ne 0 ] && die 'Must be run by root user.'
-    print_info "Root ok"
+    [ $EUID -ne 0 ] && die '请以root用户运行'
+    print_info "Root权限通过！"
 #debian-based only
-    [ ! -f /etc/debian_version ] && die "Must be run on a Debian-based system."
-    print_info "Debian-based ok"
+    [ ! -f /etc/debian_version ] && die "必须在基于Debian的系统上运行."
+    print_info "基于Debian   ok"
 #tun/tap
-    [ ! -e /dev/net/tun ] && die "TUN/TAP is not available."
-    print_info "TUN/TAP ok"
+    [ ! -e /dev/net/tun ] && die "TUN/TAP不可用。"
+    print_info "TUN/TAP OK"
 #check install 防止重复安装
-    [ -f /usr/sbin/ocserv ] && die "Ocserv has been installed."
-    print_info "Not installed ok"
+    [ -f /usr/sbin/ocserv ] && die "Ocserv已经安装。"
+    print_info "没有安装！"
 #install base-tools 
-    print_info "Installing base-tools......"
+    print_info "安装基础工具！"
     apt-get update  -qq
     check_install "curl vim sudo gawk sed insserv nano" "curl vim sudo gawk sed insserv nano"
     check_install "dig lsb_release" "dnsutils lsb-release"
     insserv -s  > /dev/null 2>&1 || ln -s /usr/lib/insserv/insserv /sbin/insserv
-    print_info "Get base-tools ok"
+    print_info "基础工具安装成功"
 #only Debian 7+
-    surport_Syscodename || die "Sorry, your system is too old or has not been tested."
-    print_info "Distro ok"
+    surport_Syscodename || die "对不起，不支持你的系统"
+    print_info "系统正常支持"
 #check systemd
     ocserv_systemd="n"
     pgrep systemd-journal > /dev/null 2>&1 && ocserv_systemd="y"
-    print_info "Systemd status : $ocserv_systemd"
+    print_info "系统状态 : $ocserv_systemd"
 #sources check
     source_wheezy_backports="y" && source_jessie="y"
     character_Test "/etc/apt/sources.list" "wheezy-backports" || source_wheezy_backports="n"
     character_Test "/etc/apt/sources.list" "jessie" || source_jessie="n"
     print_info "Sources check ok"
 #get info from net 从网络中获取信息
-    print_info "Getting info from net......"
+    print_info "获取信息中....."
     get_info_from_net
-    print_info "Get info ok"
+    print_info "获取成功"
     clear
 }
 
@@ -309,16 +319,16 @@ function get_info_from_net(){
 
 function get_Custom_configuration(){
 #whether to use the certificate login 是否证书登录,默认为用户名密码登录
-    fast_Default_Ask "Whether to choose the certificate login?(y/n)" "n" "ca_login"
+    fast_Default_Ask "是否选择证书登录？（y/n）" "n" "ca_login"
 #whether to generate a Self-signed CA 是否需要制作自签名证书
-    fast_Default_Ask "Generate a Self-signed CA for your server?(y/n)" "y" "self_signed_ca"
+    fast_Default_Ask "为您的服务器生成自签名CA？（y/n）" "y" "self_signed_ca"
     if [ "$self_signed_ca" = "n" ]; then
-        Default_Ask "Input your own domain for ocserv." "$ocserv_hostname" "fqdnname"
+        Default_Ask "为ocserv输入您自己的域名." "$ocserv_hostname" "fqdnname"
     else 
-        fast_Default_Ask "Your CA's name?" "ocvpn" "caname"
-        fast_Default_Ask "Your Organization name?" "ocvpn" "ogname"
-        fast_Default_Ask "Your Company name?" "ocvpn" "coname"
-        Default_Ask "Your server's domain?" "$ocserv_hostname" "fqdnname"
+        fast_Default_Ask "您的证书名字" "ocvpn" "caname"
+        fast_Default_Ask "你的组织名称？" "ocvpn" "ogname"
+        fast_Default_Ask "你的公司名称？" "ocvpn" "coname"
+        Default_Ask "您的服务器的域名？" "$ocserv_hostname" "fqdnname"
     fi
 #question part 2
     get_Custom_configuration_2
@@ -327,39 +337,39 @@ function get_Custom_configuration(){
 function get_Custom_configuration_2(){
 #Which ocserv version to install 安装哪个版本的ocserv
     [ "$OC_version_latest" = "" ] && {
-        print_warn "Could not connect to the official website,download ocserv from github."
+        print_warn "无法连接到官方网站，请从github下载ocserv."
         print_xxxx
     } || {
-        fast_Default_Ask "$OC_version_latest is the latest,but default version is recommended.Which to choose?" "$Default_oc_version" "oc_version"
+        fast_Default_Ask "$OC_version_latest 是最新的版本，但是推荐默认版本。选择哪个？" "$Default_oc_version" "oc_version"
     }
 #which port to use for verification 选择验证端口
-    fast_Default_Ask "Which port to use for verification?(Tcp-Port)" "999" "ocserv_tcpport_set"
+    fast_Default_Ask "使用哪个端口进行验证？（TCP端口）" "999" "ocserv_tcpport_set"
 #tcp-port only or not 是否仅仅使用tcp端口，即是否禁用udp
-    fast_Default_Ask "Only use tcp-port or not?(y/n)" "n" "only_tcp_port"
+    fast_Default_Ask "是否只使用tcp端口？（y/n）" "n" "only_tcp_port"
 #which port to use for data transmission 选择udp端口 即专用数据传输的udp端口
     if [ "$only_tcp_port" = "n" ]; then
-        fast_Default_Ask "Which port to use for data transmission?(Udp-Port)" "1999" "ocserv_udpport_set"
+        fast_Default_Ask "数据传输使用哪个端口？（UDP端口）" "1999" "ocserv_udpport_set"
     fi
 #boot from the start 是否开机自起
-    fast_Default_Ask "Start ocserv when system is started?(y/n)" "y" "ocserv_boot_start"
+    fast_Default_Ask "系统启动时启动ocserv？（y/n）" "y" "ocserv_boot_start"
 #Save user vars or not 是否保存脚本参数 以便于下次快速配置
-    fast_Default_Ask "Save the vars for fast mode or not?" "n" "save_user_vars"
+    fast_Default_Ask "是否将vars保存为fast模式？" "n" "save_user_vars"
 }
 
 #add a user 增加一个初始用户
 function add_a_user(){
     if [ "$ca_login" = "n" ]; then
-        Default_Ask "Input your username for ocserv." "$(get_random_word 4)" "username"
-        Default_Ask "Input your password for ocserv." "$(get_random_word 6)" "password"
+        Default_Ask "输入用户名." "$(get_random_word 4)" "username"
+        Default_Ask "输入密码." "$(get_random_word 6)" "password"
     fi
     if [ "$ca_login" = "y" ] && [ "$self_signed_ca" = "y" ]; then
-        Default_Ask "Input a name for your p12-cert file." "$(get_random_word 4)" "name_user_ca"
+        Default_Ask "输入一个名字给 p12证书文件." "$(get_random_word 4)" "name_user_ca"
         while [ -d /etc/ocserv/CAforOC/user-${name_user_ca} ]; do
-            Default_Ask "The name already exists,change one please!" "$(get_random_word 4)" "name_user_ca"
+            Default_Ask "名称已经存在，请更改一个！" "$(get_random_word 4)" "name_user_ca"
         done
-        Default_Ask "Input your password for your p12-cert file." "$(get_random_word 4)" "password"
+        Default_Ask "输入您的p12证书文件的密码。" "$(get_random_word 4)" "password"
 #set expiration days for client p12-cert 设定客户端证书到期天数
-        Default_Ask "Input the number of expiration days for your p12-cert file." "7777" "oc_ex_days"
+        Default_Ask "输入p12证书文件的过期天数。" "7777" "oc_ex_days"
     fi
 }
 
@@ -367,7 +377,7 @@ function add_a_user(){
 function Dependencies_install_onebyone(){
     for OC_DP in $oc_dependencies
     do
-        print_info "Installing $OC_DP "
+        print_info "安装 $OC_DP "
         DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $TEST_S $OC_DP
         if [ $? -eq 0 ]; then
             print_info "Install [ ${OC_DP} ] ok!"
@@ -380,7 +390,7 @@ function Dependencies_install_onebyone(){
 
 #lz4 from github
 function tar_lz4_install(){
-    print_info "Installing lz4 from github"
+    print_info "从github安装lz4"
     DEBIAN_FRONTEND=noninteractive apt-get -y -qq remove --purge liblz4-dev
     mkdir lz4
     LZ4_VERSION=`curl -sL "https://github.com/Cyan4973/lz4/releases/latest" | sed -n 's/^.*tag\/\([^"]*\).*/\1/p' | head -n1` 
@@ -401,7 +411,7 @@ function tar_lz4_install(){
 
 #install freeradius-client 1.1.7
 function tar_freeradius_client_install(){
-    print_info "Installing freeradius-client-1.1.7"
+    print_info "安装 freeradius-client-1.1.7"
     DEBIAN_FRONTEND=noninteractive apt-get -y -qq remove --purge freeradius-client*
     wget -c ftp://ftp.freeradius.org/pub/freeradius/freeradius-client-1.1.7.tar.gz
     tar -zxf freeradius-client-1.1.7.tar.gz
@@ -528,9 +538,9 @@ function tar_ocserv_install(){
 #get or set config file
     cd /etc/ocserv
     [ ! -f /etc/init.d/ocserv ] && {
-        wget -c --no-check-certificate $NET_OC_CONF_DOC/ocserv -O /etc/init.d/ocserv
-        chmod 755 /etc/init.d/ocserv
-        [ "$ocserv_systemd" = "y" ] && systemctl daemon-reload > /dev/null 2>&1
+        wget -c --no-check-certificate $NET_OC_CONF_DOC/ocserv_debian -O /etc/init.d/ocserv
+        chmod +x /etc/init.d/ocserv
+        update-rc.d -f ocserv defaults
     }
     [ ! -f ocserv-up.sh ] && {
         wget -c --no-check-certificate $NET_OC_CONF_DOC/ocserv-up.sh
@@ -547,15 +557,15 @@ function tar_ocserv_install(){
         wget -c --no-check-certificate $NET_OC_CONF_DOC/Route -O config-per-group/Route
     }
     [ ! -f dh.pem ] && {
-        print_info "Perhaps generate DH parameters will take some time , please wait..."
+        print_info "也许生成DH参数需要一些时间，请稍候……"
         certtool --generate-dh-params --sec-param medium --outfile dh.pem
     }
     clear
-    print_info "Ocserv install ok"
+    print_info "Ocserv 安装成功"
 }
 
 function make_ocserv_ca(){
-    print_info "Generating Self-signed CA..."
+    print_info "生成自签名CA..."
 #all in one doc
     cd /etc/ocserv/CAforOC
 #Self-signed CA set
@@ -599,16 +609,16 @@ _EOF_
     cat ca-cert.pem >> server-cert.pem
     cp server-cert.pem /etc/ocserv && cp server-key.pem /etc/ocserv
     cp ca-cert.pem /etc/ocserv
-    print_info "Self-signed CA for ocserv ok"
+    print_info "自签名证书成功"
 }
 
 function ca_login_clientcert(){
 #generate a client cert
-    print_info "Generating a client cert..."
+    print_info "生成客户端证书……"
     cd /etc/ocserv/CAforOC
     caname=`openssl x509 -noout -subject -in ca-cert.pem|sed -n 's/.*CN=\([^=]*\)\/.*/\1/p'`
     if [ "X${caname}" = "X" ]; then
-        Default_Ask "Tell me your CA's name." "ocvpn" "caname"
+        Default_Ask "告诉我你的CA的名字。" "ocvpn" "caname"
     fi
     name_user_ca=${name_user_ca:-$(get_random_word 4)}
     while [ -d user-${name_user_ca} ]; do
@@ -636,7 +646,7 @@ _EOF_
 #cp to ${Script_Dir}
     cp user-${name_user_ca}/user-${name_user_ca}.p12 ${Script_Dir}/${name_user_ca}.p12
     empty_revocation_list
-    print_info "Generate client cert ok"
+    print_info "生成客户端证书成功"
 }
 
 function empty_revocation_list(){
@@ -672,13 +682,14 @@ function set_ocserv_conf(){
     echo "route = 0.0.0.0/128.0.0.0" > /etc/ocserv/config-per-group/All
     echo "route = 128.0.0.0/128.0.0.0" >> /etc/ocserv/config-per-group/All
 #boot from the start 开机自启
-    [ "$ocserv_boot_start" = "y" ] && {
-        print_info "Enable ocserv service to start during bootup."
-        [ "$ocserv_systemd" = "y" ] && {
-            systemctl enable ocserv > /dev/null 2>&1 || insserv ocserv > /dev/null 2>&1
-        }
-        [ "$ocserv_systemd" = "n" ] && insserv ocserv > /dev/null 2>&1
-    }
+Service_ocserv
+    # [ "$ocserv_boot_start" = "y" ] && {
+    #     print_info "Enable ocserv service to start during bootup."
+    #     [ "$ocserv_systemd" = "y" ] && {
+    #         systemctl enable ocserv > /dev/null 2>&1 || insserv ocserv > /dev/null 2>&1
+    #     }
+    #     [ "$ocserv_systemd" = "n" ] && insserv ocserv > /dev/null 2>&1
+    # }
 #add a user ，the plain login 增加一个初始用户，用户密码方式下
     [ "$ca_login" = "n" ] && plain_login_set
 #only tcp-port 仅仅使用tcp端口
@@ -726,15 +737,15 @@ function stop_ocserv(){
         do
             kill -9 $pid > /dev/null 2>&1
             if [ $? -eq 0 ]; then
-                echo "Ocserv process[$pid] has been killed"
+                echo "Ocserv进程[$pid]已终止"
             fi
         done
     fi
 }
 
 function start_ocserv(){
-    [ ! -f /etc/ocserv/server-cert.pem ] && die "server-cert.pem NOT Found !!!"
-    [ ! -f /etc/ocserv/server-key.pem ] && die "server-key.pem NOT Found !!!"
+    [ ! -f /etc/ocserv/server-cert.pem ] && die "server-cert.pem 没找到 !!!"
+    [ ! -f /etc/ocserv/server-key.pem ] && die "server-key.pem 没找到!!!"
     /etc/init.d/ocserv start
 }
 
@@ -864,7 +875,14 @@ function reinstall_ocserv(){
     rm -rf /usr/bin/ocpasswd
     install_OpenConnect_VPN_server
 }
-
+function uninstall_ocserv(){
+    stop_ocserv
+    rm -rf /etc/ocserv
+    rm -rf /usr/sbin/ocserv
+    rm -rf /etc/init.d/ocserv
+    rm -rf /usr/bin/occtl
+    rm -rf /usr/bin/ocpasswd
+}
 function upgrade_ocserv(){    
     get_info_from_net
     [ "$OC_version_latest" = "" ] && {
@@ -997,19 +1015,17 @@ LOC_OC_CONF="/etc/ocserv/ocserv.conf"
 clear
 echo "==============================================================================================="
 echo
-print_info " System Required:  Debian 7+"
+print_info " 系统要求：Debian 7+ Ubuntu 14.04 +"
 echo
-print_info " Description:  Install OpenConnect VPN server"
-echo
-print_info " Help Info:  bash `basename $0` help"
+print_info " 描述:  安装 OpenConnect VPN 服务端"
 echo
 echo "==============================================================================================="
 
 #ocserv配置文件所在的网络文件夹位置
 #如果fork的话，请修改为自己的网络地址
-NET_OC_CONF_DOC="https://raw.githubusercontent.com/fanyueciyuan/eazy-for-ss/master/ocservauto"
+NET_OC_CONF_DOC="https://raw.githubusercontent.com/user1121114685/Ocserv_for_Debian_Ubuntu/master"
 #推荐的默认版本
-Default_oc_version="0.10.8"
+Default_oc_version="0.11.8"
 #开启分组模式，每位用户都会分配到All组和Route组。
 #All走全局，Route将会绕过大陆。
 #证书以及用户名登录都会采取。
@@ -1022,31 +1038,358 @@ open_two_group="n"
 Extra_Options=""
 
 #Initialization step
-action=$1
-[  -z $1 ] && action=install
-case "$action" in
-install)
+# action=$1
+# [  -z $1 ] && action=install
+# case "$action" in
+# install)
+#     log_Start
+#     install_OpenConnect_VPN_server | tee -a ${Script_Dir}/ocinstall.log
+#     ;;
+# fastmode | fm)
+#     [ ! -f $CONFIG_PATH_VARS ] && die "$CONFIG_PATH_VARS Not Found !"
+#     fast_install="y"
+#     . $CONFIG_PATH_VARS
+#     log_Start
+#     install_OpenConnect_VPN_server | tee -a ${Script_Dir}/ocinstall.log
+#     ;;
+# upgrade | ug)
+#     log_Start
+#     upgrade_ocserv | tee -a ${Script_Dir}/ocinstall.log
+#     ;;
+# reinstall | ri)
+#     log_Start
+#     reinstall_ocserv | tee -a ${Script_Dir}/ocinstall.log
+#     ;;
+# occ)
+#     log_Start
+#     install_Oneclientcer | tee -a ${Script_Dir}/ocinstall.log
+#     ;;
+# getuserca | gc)
+#     character_Test ${LOC_OC_CONF} 'auth = "plain' && {
+#         character_Test ${LOC_OC_CONF} 'enable-auth = certificate' || {
+#             die "You have to enable the the certificate login at first."
+#         }
+#     }
+#     get_new_userca
+#     get_new_userca_show
+#     ;;
+# revokeuserca | rc)
+#     revoke_userca
+#     ;;
+# pc)
+#     enable_both_login
+#     ;;
+# help | h)
+#     clear
+#     help_ocservauto
+#     ;;
+# *)
+#     clear
+#     print_warn "Arguments error! [ ${action} ]"
+#     print_warn "Usage:  bash `basename $0` {install|fm|gc|rc|ug|ri|pc|occ|help}"
+#     help_ocservauto
+#     ;;
+# esac
+# exit 0
+over(){
+	update-rc.d -f ocserv remove
+    rm -rf /etc/ocserv
+    rm -rf /usr/sbin/ocserv
+    rm -rf /etc/init.d/ocserv
+    rm -rf /usr/bin/occtl
+    rm -rf /usr/bin/ocpasswd
+	echo && echo "安装过程错误，ocserv 卸载完成 !" && echo
+}
+
+PID_FILE="/var/run/ocserv.pid"
+passwd_file="/etc/ocserv/ocpasswd"
+
+
+List_User(){
+	[[ ! -e ${passwd_file} ]] && echo -e "${Error} ocserv 账号配置文件不存在 !" && exit 1
+	User_text=$(cat ${passwd_file})
+	if [[ ! -z ${User_text} ]]; then
+		User_num=$(echo -e "${User_text}"|wc -l)
+		user_list_all=""
+		for((integer = 1; integer <= ${User_num}; integer++))
+		do
+			user_name=$(echo -e "${User_text}" | awk -F ':*:' '{print $1}' | sed -n "${integer}p")
+			user_status=$(echo -e "${User_text}" | awk -F ':*:' '{print $NF}' | sed -n "${integer}p"|cut -c 1)
+			if [[ ${user_status} == '!' ]]; then
+				user_status="禁用"
+			else
+				user_status="启用"
+			fi
+			user_list_all=${user_list_all}"用户名: "${user_name}" 账号状态: "${user_status}"\n"
+		done
+		echo && echo -e "用户总数 ${Green_font_prefix}"${User_num}"${Font_color_suffix}"
+		echo -e ${user_list_all}
+	fi
+}
+
+Set_username(){
+	echo "请输入 要添加的VPN账号 用户名"
+	read -e -p "(默认: admin):" username
+	[[ -z "${username}" ]] && username="admin"
+	echo && echo -e "	用户名 : ${Red_font_prefix}${username}${Font_color_suffix}" && echo
+}
+Set_passwd(){
+	echo "请输入 要添加的VPN账号 密码"
+	read -e -p "(默认: admin8888):" userpass
+	[[ -z "${userpass}" ]] && userpass="admin8888"
+	echo && echo -e "	密码 : ${Red_font_prefix}${userpass}${Font_color_suffix}" && echo
+}
+
+
+Add_User(){
+	Set_username
+	Set_passwd
+	user_status=$(cat "${passwd_file}"|grep "${username}"':*:')
+	[[ ! -z ${user_status} ]] && echo -e "${Error} 用户名已存在 ![ ${username} ]" && exit 1
+	echo -e "${userpass}\n${userpass}"|ocpasswd -c ${passwd_file} ${username}
+	user_status=$(cat "${passwd_file}"|grep "${username}"':*:')
+	if [[ ! -z ${user_status} ]]; then
+		echo -e "${Info} 账号添加成功 ![ ${username} ]"
+	else
+		echo -e "${Error} 账号添加失败 ![ ${username} ]" && exit 1
+	fi
+}
+Del_User(){
+	List_User
+	[[ ${User_num} == 1 ]] && echo -e "${Error} 当前仅剩一个账号配置，无法删除 !" && exit 1
+	echo -e "请输入要删除的VPN账号的用户名"
+	read -e -p "(默认取消):" Del_username
+	[[ -z "${Del_username}" ]] && echo "已取消..." && exit 1
+	user_status=$(cat "${passwd_file}"|grep "${Del_username}"':*:')
+	[[ -z ${user_status} ]] && echo -e "${Error} 用户名不存在 ! [${Del_username}]" && exit 1
+	ocpasswd -c ${passwd_file} -d ${Del_username}
+	user_status=$(cat "${passwd_file}"|grep "${Del_username}"':*:')
+	if [[ -z ${user_status} ]]; then
+		echo -e "${Info} 删除成功 ! [${Del_username}]"
+	else
+		echo -e "${Error} 删除失败 ! [${Del_username}]" && exit 1
+	fi
+}
+Modify_User_disabled(){
+	List_User
+	echo -e "请输入要启用/禁用的VPN账号的用户名"
+	read -e -p "(默认取消):" Modify_username
+	[[ -z "${Modify_username}" ]] && echo "已取消..." && exit 1
+	user_status=$(cat "${passwd_file}"|grep "${Modify_username}"':*:')
+	[[ -z ${user_status} ]] && echo -e "${Error} 用户名不存在 ! [${Modify_username}]" && exit 1
+	user_status=$(cat "${passwd_file}" | grep "${Modify_username}"':*:' | awk -F ':*:' '{print $NF}' |cut -c 1)
+	if [[ ${user_status} == '!' ]]; then
+			ocpasswd -c ${passwd_file} -u ${Modify_username}
+			user_status=$(cat "${passwd_file}" | grep "${Modify_username}"':*:' | awk -F ':*:' '{print $NF}' |cut -c 1)
+			if [[ ${user_status} != '!' ]]; then
+				echo -e "${Info} 启用成功 ! [${Modify_username}]"
+			else
+				echo -e "${Error} 启用失败 ! [${Modify_username}]" && exit 1
+			fi
+		else
+			ocpasswd -c ${passwd_file} -l ${Modify_username}
+			user_status=$(cat "${passwd_file}" | grep "${Modify_username}"':*:' | awk -F ':*:' '{print $NF}' |cut -c 1)
+			if [[ ${user_status} == '!' ]]; then
+				echo -e "${Info} 禁用成功 ! [${Modify_username}]"
+			else
+				echo -e "${Error} 禁用失败 ! [${Modify_username}]" && exit 1
+			fi
+		fi
+}
+Set_Pass(){
+	check_installed_status
+	echo && echo -e " 你要做什么？
+	
+ ${Green_font_prefix} 0.${Font_color_suffix} 列出 账号配置
+————————
+ ${Green_font_prefix} 1.${Font_color_suffix} 添加 账号配置
+ ${Green_font_prefix} 2.${Font_color_suffix} 删除 账号配置
+————————
+ ${Green_font_prefix} 3.${Font_color_suffix} 启用/禁用 账号配置
+ 
+ 注意：添加/修改/删除 账号配置后，VPN服务端会实时读取，无需重启服务端 !" && echo
+	read -e -p "(默认: 取消):" set_num
+	[[ -z "${set_num}" ]] && echo "已取消..." && exit 1
+	if [[ ${set_num} == "0" ]]; then
+		List_User
+	elif [[ ${set_num} == "1" ]]; then
+		Add_User
+	elif [[ ${set_num} == "2" ]]; then
+		Del_User
+	elif [[ ${set_num} == "3" ]]; then
+		Modify_User_disabled
+	else
+		echo -e "${Error} 请输入正确的数字[1-3]" && exit 1
+	fi
+}
+
+
+check_pid(){
+	if [[ ! -e ${PID_FILE} ]]; then
+		PID=""
+	else
+		PID=$(cat ${PID_FILE})
+	fi
+}
+
+check_installed_status(){
+	[[ ! -e /usr/sbin/ocserv ]] && echo -e "${Error} ocserv 没有安装，请检查 !" && exit 1
+	[[ ! -e ${LOC_OC_CONF} ]] && echo -e "${Error} ocserv 配置文件不存在，请检查 !" && [[ $1 != "un" ]] && exit 1
+}
+
+
+Start_ocserv(){
+	check_installed_status
+	check_pid
+	[[ ! -z ${PID} ]] && echo -e "${Error} ocserv 正在运行，请检查 !" && exit 1
+	/etc/init.d/ocserv start
+	sleep 2s
+	check_pid
+	[[ ! -z ${PID} ]] && echo -e " ocserv 启动成功 !"
+}
+Stop_ocserv(){
+	check_installed_status
+	check_pid
+	[[ -z ${PID} ]] && echo -e "${Error} ocserv 没有运行，请检查 !" && exit 1
+	/etc/init.d/ocserv stop
+}
+Restart_ocserv(){
+	check_installed_status
+	check_pid
+	[[ ! -z ${PID} ]] && /etc/init.d/ocserv stop
+	/etc/init.d/ocserv start
+	sleep 2s
+	check_pid
+	[[ ! -z ${PID} ]] && echo -e " ocserv 启动成功 !"
+}
+
+
+Service_ocserv(){
+	if ! wget --no-check-certificate https://raw.githubusercontent.com/user1121114685/Ocserv_for_Debian_Ubuntu/master/ocserv_debian -O /etc/init.d/ocserv; then
+		echo -e "${Error} ocserv 服务 管理脚本下载失败 !" && over
+	fi
+	chmod +x /etc/init.d/ocserv
+	update-rc.d -f ocserv defaults
+	echo -e "${Info} ocserv 服务 管理脚本下载完成 !"
+}
+
+
+Update_Shell(){
+	sh_new_ver=$(wget --no-check-certificate -qO- -t1 -T3 "https://raw.githubusercontent.com/user1121114685/Ocserv_for_Debian_Ubuntu/master/ocservauto.sh"|grep 'sh_ver="'|awk -F "=" '{print $NF}'|sed 's/\"//g'|head -1) && sh_new_type="github"
+	[[ -z ${sh_new_ver} ]] && echo -e "${Error} 无法链接到 Github !" && exit 0
+	if [[ -e "/etc/init.d/ocserv" ]]; then
+		rm -rf /etc/init.d/ocserv
+		Service_ocserv
+	fi
+	wget -N --no-check-certificate "https://raw.githubusercontent.com/user1121114685/Ocserv_for_Debian_Ubuntu/master/ocservauto.sh" && chmod +x ocservauto.sh
+	echo -e "脚本已更新为最新版本[ ${sh_new_ver} ] !(注意：因为更新方式为直接覆盖当前运行的脚本，所以可能下面会提示一些报错，无视即可)" && exit 0
+}
+
+
+echo && echo -e "  Ocserv 一键安装管理脚本 ${Red_font_prefix}[v${sh_ver}]${Font_color_suffix}
+
+  新建用户  ocpasswd -c /etc/ocserv/ocpasswd 用户名
+
+  新建证书用户 bash ocservauto.sh getuserca       getuserca可用gc代替   
+
+  吊销证书用户 bash ocservauto.sh revokeuserca    revokeuserca可用rc代替
+
+===============================================================================================
+
+ ${Green_font_prefix}0.${Font_color_suffix}  升级脚本
+————————————
+ ${Green_font_prefix}1.${Font_color_suffix}  安装 ocserv
+ ${Green_font_prefix}2.${Font_color_suffix}  卸载 ocserv
+————————————
+ ${Green_font_prefix}3.${Font_color_suffix}  重装 ocserv
+ ${Green_font_prefix}4.${Font_color_suffix}  开启fast模式
+ ${Green_font_prefix}5.${Font_color_suffix}  更新 ocserv
+————————————
+ ${Green_font_prefix}6.${Font_color_suffix}  证书验证
+ ${Green_font_prefix}7.${Font_color_suffix}  同时启用证书登陆和密码登陆
+ ${Green_font_prefix}8.${Font_color_suffix}  查看帮助
+ ————————————
+ ${Green_font_prefix}9.${Font_color_suffix}  启动 ocserv
+ ${Green_font_prefix}10.${Font_color_suffix} 停止 ocserv
+ ${Green_font_prefix}11.${Font_color_suffix} 重启 ocserv
+————————————
+ ${Green_font_prefix}12.${Font_color_suffix} 用户管理（账号密码）
+ ${Green_font_prefix}13.${Font_color_suffix} 新建证书用户
+ ${Green_font_prefix}14.${Font_color_suffix} 吊销证书用户
+————————————" && echo
+if [[ -e /usr/sbin/ocserv ]]; then
+	check_pid
+	if [[ ! -z "${PID}" ]]; then
+		echo -e " 当前状态: ${Green_font_prefix}已安装${Font_color_suffix} 并 ${Green_font_prefix}已启动${Font_color_suffix}"
+	else
+		echo -e " 当前状态: ${Green_font_prefix}已安装${Font_color_suffix} 但 ${Red_font_prefix}未启动${Font_color_suffix}"
+	fi
+else
+	echo -e " 当前状态: ${Red_font_prefix}未安装${Font_color_suffix}"
+fi
+echo
+read -e -p " 请输入数字 [0-14]:" num
+case "$num" in
+	0)
+	Update_Shell
+	;;
+	1)
     log_Start
     install_OpenConnect_VPN_server | tee -a ${Script_Dir}/ocinstall.log
-    ;;
-fastmode | fm)
+	;;
+	2)
+    log_Start
+    uninstall_ocserv | tee -a ${Script_Dir}/ocinstall.log
+	;;
+	3)
+    log_Start
+    reinstall_ocserv | tee -a ${Script_Dir}/ocinstall.log
+	;;
+	4)
     [ ! -f $CONFIG_PATH_VARS ] && die "$CONFIG_PATH_VARS Not Found !"
     fast_install="y"
     . $CONFIG_PATH_VARS
     log_Start
     install_OpenConnect_VPN_server | tee -a ${Script_Dir}/ocinstall.log
-    ;;
-upgrade | ug)
+	;;
+	5)
     log_Start
     upgrade_ocserv | tee -a ${Script_Dir}/ocinstall.log
-    ;;
-reinstall | ri)
-    log_Start
-    reinstall_ocserv | tee -a ${Script_Dir}/ocinstall.log
-    ;;
-occ)
+	;;
+	6)
     log_Start
     install_Oneclientcer | tee -a ${Script_Dir}/ocinstall.log
+	;;
+	7)
+    enable_both_login
+	;;
+	8)
+    clear
+    help_ocservauto
+	;;
+	9)
+	Start_ocserv
+	;;
+	10)
+	Stop_ocserv
+	;;
+	11)
+	Restart_ocserv
+	;;
+	12)
+	Set_Pass
+	;;
+    13)
+    character_Test ${LOC_OC_CONF} 'auth = "plain' && {
+        character_Test ${LOC_OC_CONF} 'enable-auth = certificate' || {
+            die "You have to enable the the certificate login at first."
+        }
+    }
+    get_new_userca
+    get_new_userca_show
+    ;;
+    14)
+    revoke_userca
     ;;
 getuserca | gc)
     character_Test ${LOC_OC_CONF} 'auth = "plain' && {
@@ -1060,18 +1403,8 @@ getuserca | gc)
 revokeuserca | rc)
     revoke_userca
     ;;
-pc)
-    enable_both_login
-    ;;
-help | h)
-    clear
-    help_ocservauto
-    ;;
-*)
-    clear
-    print_warn "Arguments error! [ ${action} ]"
-    print_warn "Usage:  bash `basename $0` {install|fm|gc|rc|ug|ri|pc|occ|help}"
-    help_ocservauto
-    ;;
+	*)
+	echo "请输入正确数字 [0-14]"
+	;;
 esac
-exit 0
+
