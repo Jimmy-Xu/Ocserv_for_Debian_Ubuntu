@@ -343,12 +343,12 @@ function get_Custom_configuration_2(){
         fast_Default_Ask "$OC_version_latest 是最新的版本，但是推荐默认版本。选择哪个？" "$Default_oc_version" "oc_version"
     }
 #which port to use for verification 选择验证端口
-    fast_Default_Ask "使用哪个端口进行验证？（TCP端口）" "999" "ocserv_tcpport_set"
+    fast_Default_Ask "使用哪个端口进行验证？（TCP端口）" "443" "ocserv_tcpport_set"
 #tcp-port only or not 是否仅仅使用tcp端口，即是否禁用udp
     fast_Default_Ask "是否只使用tcp端口？（y/n）" "n" "only_tcp_port"
 #which port to use for data transmission 选择udp端口 即专用数据传输的udp端口
     if [ "$only_tcp_port" = "n" ]; then
-        fast_Default_Ask "数据传输使用哪个端口？（UDP端口）" "1999" "ocserv_udpport_set"
+        fast_Default_Ask "数据传输使用哪个端口？（UDP端口）" "443" "ocserv_udpport_set"
     fi
 #boot from the start 是否开机自起
     fast_Default_Ask "系统启动时启动ocserv？（y/n）" "y" "ocserv_boot_start"
@@ -663,8 +663,8 @@ _EOF_
 #modify config file 设定相关参数
 function set_ocserv_conf(){
 #default vars
-    ocserv_tcpport_set=${ocserv_tcpport_set:-999}
-    ocserv_udpport_set=${ocserv_udpport_set:-1999}
+    ocserv_tcpport_set=${ocserv_tcpport_set:-443}
+    ocserv_udpport_set=${ocserv_udpport_set:-443}
     save_user_vars=${save_user_vars:-n}
     ocserv_boot_start=${ocserv_boot_start:-y}
     only_tcp_port=${only_tcp_port:-n}
